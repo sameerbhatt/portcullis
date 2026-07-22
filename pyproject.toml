@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portcullis"
+version = "0.1.0"
+description = "A per-action autonomy policy layer for AI agents: decide what an agent may do on its own, based on an action's reversibility and blast radius rather than the model's capability."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Sameer Bhatt" }]
+keywords = ["agents", "llm", "langgraph", "langchain", "governance", "autonomy", "human-in-the-loop"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []  # core is intentionally dependency-free
+
+[project.optional-dependencies]
+langgraph = ["langgraph>=0.2", "langchain-core>=0.3"]
+demo = [
+    "langgraph>=0.2",
+    "langchain-core>=0.3",
+    "langchain-openai>=0.2",
+]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/your-handle/portcullis"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
