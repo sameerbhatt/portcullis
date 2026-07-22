@@ -95,8 +95,9 @@
     <div class="tagline">every tool call judged on reversibility &times; blast radius &mdash; not on how capable the agent is</div>
   </header>
 
-  <p class="lead">An agent proposed four actions to process a refund.
-    The governance layer let two run, and <b>stopped the two that could not be undone.</b></p>
+  <p class="lead">An agent proposed six actions to process a refund.
+    The governance layer let four run &mdash; recording two of them &mdash; and
+    <b>stopped the two that could not be undone.</b></p>
 
   <div class="axis-note">blast radius &rarr;&nbsp;&nbsp;&nbsp; reversibility &darr;</div>
   <div class="matrix" id="matrix">
@@ -125,6 +126,7 @@
   <footer>
     <span><b id="s-total">0</b> actions</span>
     <span><b id="s-allow">0</b> auto&#8209;executed</span>
+    <span><b id="s-audit">0</b> executed + audited</span>
     <span><b id="s-pause">0</b> paused for a human</span>
     <span style="margin-left:auto">reads <b>demo/audit_log.jsonl</b></span>
   </footer>
@@ -135,16 +137,24 @@
 // writes; embedded here so the page is a single self-contained file that
 // opens with no server. verdict maps outcome -> cell + styling.
 const DECISIONS = [
-  {n:1, action:"search_web",      args:{query:"Acme Corp refund policy"},          rev:"reversible",   blast:"low",  outcome:"allow"},
-  {n:2, action:"read_customer",   args:{customer_id:"C-4821"},                      rev:"reversible",   blast:"low",  outcome:"allow"},
-  {n:3, action:"send_email",      args:{to:"billing@acme.com",subject:"Refund processed"}, rev:"irreversible", blast:"high", outcome:"require_approval"},
-  {n:4, action:"delete_customer", args:{customer_id:"C-4821"},                      rev:"irreversible", blast:"high", outcome:"require_approval"},
+  {n:1, action:"search_web",         args:{query:"Acme Corp refund policy"},         rev:"reversible",   blast:"low",  outcome:"allow"},
+  {n:2, action:"read_customer",      args:{customer_id:"C-4821"},                    rev:"reversible",   blast:"low",  outcome:"allow"},
+  {n:3, action:"write_audit_note",   args:{customer_id:"C-4821",note:"refund approved under policy 4.2"}, rev:"irreversible", blast:"low",  outcome:"allow_with_audit"},
+  {n:4, action:"retag_open_tickets", args:{tag:"refund-window-2026Q3"},              rev:"reversible",   blast:"high", outcome:"allow_with_audit"},
+  {n:5, action:"send_email",         args:{to:"billing@acme.com",subject:"Refund processed"}, rev:"irreversible", blast:"high", outcome:"require_approval"},
+  {n:6, action:"delete_customer",    args:{customer_id:"C-4821"},                    rev:"irreversible", blast:"high", outcome:"require_approval"},
 ];
+// The two mixed cells reach "execute + audit" for opposite reasons, so they
+// are spelled out separately -- that contrast is the point of the middle row.
 const REASON = {
   allow:"reversible, low blast radius \u2192 safe to auto-execute",
-  allow_with_audit:"mixed profile \u2192 execute, but record for audit",
+  "allow_with_audit|irreversible|low":"cannot be undone, but contained \u2192 execute and record",
+  "allow_with_audit|reversible|high":"reversible, but reaches far \u2192 execute and record",
   require_approval:"irreversible, high blast radius \u2192 a human must approve",
 };
+function reasonFor(d){
+  return REASON[`${d.outcome}|${d.rev}|${d.blast}`] || REASON[d.outcome] || "";
+}
 const CELL = {
   "reversible|low":"c-rev-low","reversible|high":"c-rev-high",
   "irreversible|low":"c-irr-low","irreversible|high":"c-irr-high",
@@ -153,7 +163,7 @@ const VCLASS = {allow:"allow", allow_with_audit:"audit", require_approval:"pause
 
 const stream=document.getElementById("stream"), empty=document.getElementById("empty");
 const runBtn=document.getElementById("run"), resetBtn=document.getElementById("reset");
-let allow=0,pause=0,total=0;
+let allow=0,audited=0,pause=0,total=0;
 
 function fmtArgs(a){return Object.entries(a).map(([k,v])=>`${k}=${JSON.stringify(v)}`).join(", ");}
 function setStat(id,v){document.getElementById(id).textContent=v;}
@@ -174,11 +184,12 @@ function addRow(d){
     <div class="num">${String(d.n).padStart(2,"0")}</div>
     <div class="call">${d.action}<span class="args">(${fmtArgs(d.args)})</span></div>
     <div class="verdict ${vclass}">${verdictLabel}</div>
-    <div class="reason">${REASON[d.outcome]||""}</div>`;
+    <div class="reason">${reasonFor(d)}</div>`;
   stream.appendChild(row);
 
   total++; setStat("s-total",total);
   if(d.outcome==="allow"){allow++;setStat("s-allow",allow);}
+  if(d.outcome==="allow_with_audit"){audited++;setStat("s-audit",audited);}
   if(d.outcome==="require_approval"){pause++;setStat("s-pause",pause);}
 }
 
@@ -192,7 +203,8 @@ function run(){
 function reset(){
   stream.innerHTML=""; stream.appendChild(empty); empty.style.display="block";
   document.querySelectorAll(".chip").forEach(c=>c.remove());
-  allow=pause=total=0; ["s-total","s-allow","s-pause"].forEach(id=>setStat(id,0));
+  allow=audited=pause=total=0;
+  ["s-total","s-allow","s-audit","s-pause"].forEach(id=>setStat(id,0));
   runBtn.disabled=false; resetBtn.disabled=true;
 }
 runBtn.addEventListener("click",run);

@@ -44,7 +44,7 @@ src/portcullis/
   adapters/
     langgraph.py # the ONLY module that imports langchain (deferred import)
 demo/
-  tools.py         # 4 toy tools spanning all 4 cells + declared Policy
+  tools.py         # 6 sample tools spanning all 4 cells + declared Policy
   run_cli.py       # deterministic scripted plan; --auto-approve for capture
   run_langgraph.py # same task inside a real LangGraph StateGraph via the adapter
   web/index.html   # self-contained "decision console" (the hero visual)

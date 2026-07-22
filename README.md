@@ -69,8 +69,16 @@ python demo/run_cli.py --auto-approve   # non-interactive (for capture)
 open demo/web/index.html          # the visual decision console
 ```
 
-The demo runs one refund-processing task that touches all four cells: two
-reversible reads auto-execute, and two irreversible actions pause for a human.
+The demo runs one refund-processing task whose six actions touch all four
+cells, with the stakes escalating as it goes: two reversible reads
+auto-execute, two writes in the mixed cells execute but are recorded, and two
+irreversible high-blast-radius actions pause for a human.
+
+The middle pair is the one worth watching. `write_audit_note` cannot be undone
+but touches a single record; `retag_open_tickets` is trivially undone but
+writes across the whole queue. Neither is dangerous enough to stop the agent,
+and neither should pass without leaving a trail — which is exactly what the
+two mixed cells are for.
 
 ### The same governance, inside a LangGraph graph
 

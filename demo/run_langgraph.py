@@ -57,6 +57,8 @@ C = {
 PLAN = [
     ("search_web", {"query": "Acme Corp refund policy"}),
     ("read_customer", {"customer_id": "C-4821"}),
+    ("write_audit_note", {"customer_id": "C-4821", "note": "refund approved under policy 4.2"}),
+    ("retag_open_tickets", {"tag": "refund-window-2026Q3"}),
     ("send_email", {"to": "billing@acme.com", "subject": "Refund processed"}),
     ("delete_customer", {"customer_id": "C-4821"}),
 ]
@@ -95,7 +97,7 @@ def _require_langgraph():
 
 
 def build_tools(tool_decorator):
-    """Four ordinary LangChain tools -- no governance knowledge in them.
+    """Six ordinary LangChain tools -- no governance knowledge in them.
 
     They delegate to the plain functions in demo/tools.py so behaviour stays
     single-sourced with the CLI demo. Governance is layered on afterward by
@@ -113,6 +115,16 @@ def build_tools(tool_decorator):
         return demo_tools.read_customer(customer_id)
 
     @tool_decorator
+    def write_audit_note(customer_id: str, note: str) -> str:
+        """Append a note to the immutable ledger for one customer."""
+        return demo_tools.write_audit_note(customer_id, note)
+
+    @tool_decorator
+    def retag_open_tickets(tag: str) -> str:
+        """Apply a tag across every open support ticket."""
+        return demo_tools.retag_open_tickets(tag)
+
+    @tool_decorator
     def send_email(to: str, subject: str) -> str:
         """Send an email to an external recipient."""
         return demo_tools.send_email(to, subject)
@@ -122,7 +134,10 @@ def build_tools(tool_decorator):
         """Permanently delete a production customer record."""
         return demo_tools.delete_customer(customer_id)
 
-    return [search_web, read_customer, send_email, delete_customer]
+    return [
+        search_web, read_customer, write_audit_note,
+        retag_open_tickets, send_email, delete_customer,
+    ]
 
 
 def make_decision_printer():

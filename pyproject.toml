@@ -29,7 +29,7 @@ demo = [
 dev = ["pytest>=8"]
 
 [project.urls]
-Homepage = "https://github.com/your-handle/portcullis"
+Homepage = "https://github.com/sameerbhatt/portcullis"
 
 [tool.setuptools.packages.find]
 where = ["src"]

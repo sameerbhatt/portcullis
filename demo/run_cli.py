@@ -44,11 +44,14 @@ C = {
     "reset": "\033[0m",
 }
 
-# A realistic support-automation task: look something up, act on it, and
-# hit an irreversible action that must pause.
+# A realistic support-automation task, ordered so the stakes escalate: two
+# free reads, two writes that run but leave a record, then two irreversible
+# actions that must pause. Every cell of the matrix is touched.
 SCRIPTED_PLAN = [
     ("search_web", {"query": "Acme Corp refund policy"}),
     ("read_customer", {"customer_id": "C-4821"}),
+    ("write_audit_note", {"customer_id": "C-4821", "note": "refund approved under policy 4.2"}),
+    ("retag_open_tickets", {"tag": "refund-window-2026Q3"}),
     ("send_email", {"to": "billing@acme.com", "subject": "Refund processed"}),
     ("delete_customer", {"customer_id": "C-4821"}),
 ]
