@@ -1,7 +1,7 @@
 # portcullis
 
-[![PyPI](https://img.shields.io/pypi/v/portcullis.svg)](https://pypi.org/project/portcullis/)
-[![Python](https://img.shields.io/pypi/pyversions/portcullis.svg)](https://pypi.org/project/portcullis/)
+[![PyPI](https://img.shields.io/pypi/v/portcullis?color=blue)](https://pypi.org/project/portcullis/)
+[![Python](https://img.shields.io/pypi/pyversions/portcullis?color=blue)](https://pypi.org/project/portcullis/)
 [![CI](https://github.com/sameerbhatt/portcullis/actions/workflows/ci.yml/badge.svg)](https://github.com/sameerbhatt/portcullis/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sameerbhatt/portcullis/blob/main/LICENSE)
 
