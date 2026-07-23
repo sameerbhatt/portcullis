@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Let the publish workflow reuse this exact job, so nothing reaches PyPI
+  # that has not passed the same suite on every supported interpreter.
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor is what pyproject declares in requires-python.
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Core is dependency-free by design, so the suite needs nothing but
+      # pytest. Installing the package (rather than leaning on pytest's
+      # pythonpath setting) is what proves the packaging metadata is correct.
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      # The one invariant that cannot be expressed as a unit test: core must
+      # stay importable with no framework installed. langgraph is absent from
+      # this job, so a stray import in core/ fails here.
+      - name: Assert core imports without any LLM framework
+        run: |
+          python - <<'PY'
+          import sys, importlib
+          importlib.import_module("portcullis")
+          leaked = sorted(
+              m for m in sys.modules
+              if m.split(".")[0] in {"langchain", "langchain_core", "langgraph", "openai"}
+          )
+          if leaked:
+              raise SystemExit(f"core leaked framework imports: {leaked}")
+          print("core is framework-free")
+          PY

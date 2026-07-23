@@ -1,0 +1,132 @@
+name: Publish
+
+# Two ways in:
+#   * publishing a GitHub Release  -> uploads to PyPI
+#   * running this manually        -> uploads to TestPyPI by default
+#
+# Uses PyPI Trusted Publishing (OIDC), so there is no API token stored in this
+# repository. See the setup notes at the bottom of this file.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to upload"
+        type: choice
+        options: [testpypi, pypi]
+        default: testpypi
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Nothing is built until the full matrix is green.
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Runs before the build: a bad version number is cheap to fix now and
+      # impossible to fix after upload, because PyPI never reuses a version.
+      # On a release, the git tag must agree with the declared version too.
+      - name: Check version declarations agree
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            python .github/scripts/check_version.py "${{ github.ref_name }}"
+          else
+            python .github/scripts/check_version.py
+          fi
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+
+      - name: Check metadata renders on PyPI
+        run: python -m twine check --strict dist/*
+
+      # Confirms the wheel is self-contained and installs cleanly from the
+      # artifact itself, not from the working tree.
+      - name: Smoke-test the built wheel
+        run: |
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --quiet dist/*.whl
+          /tmp/smoke/bin/python - <<'PY'
+          import portcullis
+          from portcullis import GovernanceEngine, Policy, Reversibility, BlastRadius
+          print("installed portcullis", portcullis.__version__)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish-testpypi:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'testpypi'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/portcullis
+    permissions:
+      id-token: write   # required for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # TestPyPI accumulates junk from retries; don't fail a rerun on it.
+          skip-existing: true
+
+  publish-pypi:
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.target == 'pypi')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/portcullis
+    permissions:
+      id-token: write   # required for trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+# ---------------------------------------------------------------------------
+# One-time setup, both on PyPI and here. Until the first of these is done the
+# publish step will fail with an OIDC error, which is the intended behaviour --
+# it means no token is lying around in the repo.
+#
+# 1. PyPI -> Publishing -> "Add a new pending publisher":
+#        PyPI project name : portcullis
+#        Owner             : sameerbhatt
+#        Repository        : portcullis
+#        Workflow          : publish.yml
+#        Environment       : pypi
+#    Repeat on test.pypi.org with environment "testpypi".
+#
+# 2. GitHub -> Settings -> Environments: create "pypi" and "testpypi".
+#    Adding a required reviewer to "pypi" gives you a human gate in front of
+#    every upload, which is the same argument this library makes about
+#    irreversible actions.
+#
+# 3. Release: bump the version in pyproject.toml AND src/portcullis/__init__.py,
+#    commit, then draft a GitHub Release tagged vX.Y.Z. The tag must match.
+# ---------------------------------------------------------------------------
