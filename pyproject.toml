@@ -13,9 +13,18 @@ authors = [{ name = "Sameer Bhatt" }]
 keywords = ["agents", "llm", "langgraph", "langchain", "governance", "autonomy", "human-in-the-loop"]
 classifiers = [
     "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    # Spelled out so the supported-versions badge and the PyPI sidebar match
+    # what CI actually runs, rather than being inferred from requires-python.
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
 dependencies = []  # core is intentionally dependency-free
 
@@ -30,9 +39,18 @@ dev = ["pytest>=8"]
 
 [project.urls]
 Homepage = "https://github.com/sameerbhatt/portcullis"
+Repository = "https://github.com/sameerbhatt/portcullis"
+Issues = "https://github.com/sameerbhatt/portcullis/issues"
+Changelog = "https://github.com/sameerbhatt/portcullis/releases"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+# PEP 561: without this marker shipped inside the wheel, type checkers ignore
+# the annotations in an installed copy of the package, however thoroughly the
+# source is hinted.
+[tool.setuptools.package-data]
+portcullis = ["py.typed"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

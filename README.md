@@ -1,6 +1,15 @@
 # portcullis
 
+[![PyPI](https://img.shields.io/pypi/v/portcullis.svg)](https://pypi.org/project/portcullis/)
+[![Python](https://img.shields.io/pypi/pyversions/portcullis.svg)](https://pypi.org/project/portcullis/)
+[![CI](https://github.com/sameerbhatt/portcullis/actions/workflows/ci.yml/badge.svg)](https://github.com/sameerbhatt/portcullis/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/sameerbhatt/portcullis/blob/main/LICENSE)
+
 **A per-action autonomy policy layer for AI agents.**
+
+```bash
+pip install portcullis
+```
 
 Decide, for every tool call, whether an agent may act on its own — based on
 the *action's* reversibility and blast radius, not the *model's* capability.
@@ -63,6 +72,8 @@ so an existing graph needs no other changes.
 
 ## Demo
 
+Run these from a clone of the repository — see [From source](#from-source).
+
 ```bash
 python demo/run_cli.py            # live decisions in the terminal
 python demo/run_cli.py --auto-approve   # non-interactive (for capture)
@@ -81,6 +92,9 @@ and neither should pass without leaving a trail — which is exactly what the
 two mixed cells are for.
 
 ### The same governance, inside a LangGraph graph
+
+From a clone (see [From source](#from-source) — the demo scripts ship with
+the repository, not with the package):
 
 ```bash
 pip install -e ".[langgraph]"
@@ -122,9 +136,24 @@ These are intentional cuts to keep the core small and legible. The interfaces
 ## Install
 
 ```bash
-pip install -e .                 # core only
-pip install -e ".[langgraph]"    # + LangGraph adapter
-pip install -e ".[demo]"         # + everything to run the demo
+pip install portcullis                # core only, zero dependencies
+pip install "portcullis[langgraph]"   # + LangGraph adapter
+```
+
+Requires Python 3.10+. The core has no dependencies at all, so the first
+line pulls in nothing but the package itself.
+
+### From source
+
+The demo scripts live in the repository, not in the published package, so
+running them means cloning first:
+
+```bash
+git clone https://github.com/sameerbhatt/portcullis.git
+cd portcullis
+pip install -e ".[demo]"    # everything needed to run the demo
+pip install -e ".[dev]"     # core + pytest, to run the suite
+pytest -q
 ```
 
 ## License

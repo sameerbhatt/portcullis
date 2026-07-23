@@ -63,8 +63,16 @@ jobs:
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --quiet dist/*.whl
           /tmp/smoke/bin/python - <<'PY'
+          import pathlib
           import portcullis
           from portcullis import GovernanceEngine, Policy, Reversibility, BlastRadius
+
+          # PEP 561 marker. Its absence is silent -- type checkers just ignore
+          # the package -- so assert it rather than trust the build config.
+          marker = pathlib.Path(portcullis.__file__).parent / "py.typed"
+          if not marker.is_file():
+              raise SystemExit("py.typed missing from the built wheel")
+
           print("installed portcullis", portcullis.__version__)
           PY
 
